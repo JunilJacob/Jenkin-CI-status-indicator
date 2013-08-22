@@ -1,1 +1,1 @@
-{"shell-version": ["3.6.3.1"], "uuid": "jenkins-ci@juniljacob124.gmail.com", "name": "Jenkins Statis indicator", "description": "Show status of the current job"}
+{"shell-version": ["3.6.3.1"], "uuid": "jenkins-ci@juniljacob124.gmail.com", "name": "Jenkins Status indicator", "description": "Show status of the current job"}

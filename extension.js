@@ -1,7 +1,13 @@
 
 const St = imports.gi.St;
 const Main = imports.ui.main;
+const Mainloop = imports.mainloop;
 const Tweener = imports.ui.tweener;
+const Soup = imports.gi.Soup;
+const _httpSession = new Soup.SessionAsync();
+Soup.Session.prototype.add_feature.call(_httpSession, new Soup.ProxyResolverDefault());
+
+
 let greenIcon= new St.Icon({ icon_name: 'green',
                              style_class: 'system-status-icon' });
 let redIcon= new St.Icon({ icon_name: 'red',
@@ -14,15 +20,16 @@ let yellowIcon= new St.Icon({ icon_name: 'yellow',
                          style_class: 'system-status-icon' });
 let greyIcon= new St.Icon({ icon_name: 'grey',
                          style_class: 'system-status-icon' });
+
 let states = [
-    { color: 'red_anime',     icon: 'redIcon'},
+    { color: 'red_anime',     icon: 'yellowIcon'},
     { color: 'yellow_anime',  icon: 'clockIcon'},
     { color: 'blue_anime',    icon: 'clockIcon'},
     { color: 'grey_anime',    icon: 'clockIcon'},
     { color: 'aborted_anime', icon: 'clockIcon'},
     { color: 'red',           icon: 'redIcon'},
     { color: 'yellow',        icon: 'yellowIcon'},
-    { color: 'blue',          icon: 'blueIcon'},
+    { color: 'blue',          icon: 'greenIcon'},
     { color: 'grey',          icon: 'greyIcon'},
     { color: 'aborted',       icon: 'greyIcon'},
     { color: 'disabled',      icon: 'greyIcon'},
@@ -34,19 +41,24 @@ let button = new St.Bin({ style_class: 'panel-button',
                           x_fill: true,
                           y_fill: false,
                           track_hover: true });
-function init(extensionMeta) {
-    
 
+
+function init(extensionMeta) {
     let theme = imports.gi.Gtk.IconTheme.get_default();
     theme.append_search_path(extensionMeta.path + "/icons");
-    button.set_child(greyIcon);
-    getStatus();
-    //setInterval(getStatus(button), 10000)
-
+    
 }
 
-function httpGet(theUrl) {
-
+function httpGet(url) {
+    var request = Soup.Message.new('GET', url);
+    _httpSession.queue_message(request, function(_httpSession, message) {
+        if (message.status_code !== 200) {
+          callback(message.status_code, null);
+          return ;
+        }
+        var icon = getIcon(request.response_body.data);
+        setIcon(icon);
+    });
 }
 
 function setIcon(icon) {
@@ -70,31 +82,30 @@ function setIcon(icon) {
       button.set_child(greyIcon);
       break
     default:
-      button.set_child(greyIcon);
+      button.set_child(yellowIcon);
   }
 }
 
 function getIcon(response) {
-    var jobColor = "";
+    var jobColor = JSON.parse(response).jobs[0].color;
+    
     for( let i=0 ; i<states.length ; ++i )
     {
-      if(states[i].color === jobColor)
+      if(states[i].color === jobColor){
         return states[i].icon;
+      }
     }
     return 'greyIcon';
 }
 
 function getStatus() {
-    var icon,response;
-    response = httpGet("url");
-    icon = getIcon(response);
-    if(response === null)
-      setIcon('redIcon');
-    else
-      setIcon('greenIcon');
+    httpGet("url");
+    return true;
 }
 function enable() {
     Main.panel._rightBox.insert_child_at_index(button, 0);
+    button.set_child(greyIcon);
+    Mainloop.timeout_add(10000,getStatus)
 }
 function disable() {
     Main.panel._rightBox.remove_child(button);
