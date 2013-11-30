@@ -1,4 +1,3 @@
-
 const St = imports.gi.St;
 const Main = imports.ui.main;
 const Mainloop = imports.mainloop;
@@ -99,7 +98,7 @@ function getIcon(response) {
 }
 
 function getStatus() {
-    httpGet("url");
+    httpGet("url"); // change url to something like http://<user>:<pass>@serveradress
     return true;
 }
 function enable() {
